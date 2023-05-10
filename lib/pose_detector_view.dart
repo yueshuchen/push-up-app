@@ -5,8 +5,7 @@ import 'dart:typed_data';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 import 'camera_app.dart';
-import 'pose_painter.dart';
-import 'dart:developer';
+
 
 class PoseDetectorView extends StatefulWidget {
   @override
@@ -55,7 +54,6 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   Future<void> _loadModel1() async {
     final interpreterOptions = InterpreterOptions();
     _interpreter1 = await Interpreter.fromAsset('movenet-thunder.tflite', options: interpreterOptions);
-
   }
 
   Future<void> _loadModel2() async {
@@ -64,50 +62,22 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   }
 
   Future<void> processImage(Uint8List inputImage) async {
-
     if (!_canProcess) return;
     if (_isBusy) return;
     _isBusy = true;
 
-    // Convert the InputImage object to a Uint8List.
+    var output1 = List<double>.filled(51,0).reshape([1,1,17,3]);
 
+    _interpreter1!.run(inputImage, output1);
 
-    Tensor _input = _interpreter1!.getInputTensor(0);
+    debugPrint(output1.toString());
 
+    var output2 = List<double>.filled(2,0).reshape([1,2]);
 
+    _interpreter2?.run(output1, output2);
 
-    Tensor _outputTensor1 = _interpreter1!.getOutputTensor(0);
-    debugPrint('========================');
-    debugPrint(inputImage.toString());
-    debugPrint(_input.getInputShapeIfDifferent(inputImage).toString());
+    debugPrint(output2.toString());
 
-
-    _interpreter1!.run(inputImage, _outputTensor1.data);
-
-    Tensor _outputTensor2 = _interpreter2!.getOutputTensor(0);
-    _interpreter2?.run(_outputTensor1.data, _outputTensor2.data);
-
-
-
-
-
-
-
-
-
-
-
-
-    // final poses = await _poseDetector.processImage(inputImage);
-    // if (inputImage.inputImageData?.size != null &&
-    //     inputImage.inputImageData?.imageRotation != null) {
-    //   final painter = PosePainter(poses, inputImage.inputImageData!.size,
-    //       inputImage.inputImageData!.imageRotation);
-    //   _customPaint = CustomPaint(painter: painter);
-    // } else {
-    //   _text = 'Poses found: ${poses.length}\n\n';
-    //   _customPaint = null;
-    // }
     _isBusy = false;
     if (mounted) {
       setState(() {});
